@@ -1,0 +1,385 @@
+-- // СИСТЕМА КЛЮЧЕЙ SGLA
+local SGLA_KEYS = {
+    "SGLA-9890-JCXZ", "SGLA-1102-KLYS", "SGLA-4451-ZPQM", "SGLA-6627-XWNB", "SGLA-3341-BVRC",
+    "SGLA-7721-NTRD", "SGLA-8812-PLKM", "SGLA-2291-QWPO", "SGLA-5562-MLJH", "SGLA-1002-VCDX",
+    "SGLA-4882-GRTF", "SGLA-3991-YUIO", "SGLA-7726-ASDF", "SGLA-1152-HJKL", "SGLA-6621-ZXCV",
+    "SGLA-8832-POIU", "SGLA-2241-MNBV", "SGLA-5511-LKJH", "SGLA-0021-QWER", "SGLA-9912-TYUI",
+    "SGLA-7732-OPLA", "SGLA-4411-KSMN", "SGLA-3321-XPRT", "SGLA-1192-WQLM", "SGLA-6682-BNVC",
+    "SGLA-8841-VFRT", "SGLA-2211-GHYU", "SGLA-5592-JKLO", "SGLA-0032-RDEX", "SGLA-9941-PLMO",
+    "SGLA-7752-WSXC", "SGLA-4461-EDCV", "SGLA-3372-RFVT", "SGLA-1101-TGBY", "SGLA-6612-YHNU",
+    "SGLA-8851-UJMI", "SGLA-2262-IKOL", "SGLA-5521-OLPM", "SGLA-0042-QAZX", "SGLA-9971-WSXE",
+    "SGLA-7782-EDCR", "SGLA-4491-RFVT", "SGLA-3302-TGBY", "SGLA-1121-YHNJ", "SGLA-6642-UJMK",
+    "SGLA-8871-IKLO", "SGLA-2232-OLPM", "SGLA-5541-QAZW", "SGLA-0052-SXED", "SGLA-9112-CRFV"
+}
+
+-- // ГЛОБАЛЫ ДЛЯ РУК (1.9.4)
+getgenv().Color = Color3.fromRGB(141, 115, 245)
+getgenv().Material = Enum.Material.ForceField
+getgenv().Transparency = 0.25
+getgenv().HandScale = 1
+getgenv().HandsEnabled = true
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "SGLA.WTF V.1.8.0 (ULTIMATE)",
+   LoadingTitle = "CB:RO ULTIMATE - RAGE EDITION",
+   LoadingSubtitle = "REMASTERED BY sngl.",
+   ConfigurationSaving = { Enabled = true, FolderName = "Singulation", FileName = "Config" },
+   KeySystem = true,
+   KeySettings = {
+      Title = "Key System | SGLA.WTF",
+      Subtitle = "Введите ваш ключ доступа",
+      Note = "Ключи доступны в официальном Discord SGLA",
+      FileName = "SGLA_Key", 
+      SaveKey = true, 
+      GrabKeyFromSite = false,
+      Key = SGLA_KEYS 
+   }
+})
+
+-- // СЕРВИСЫ
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats")
+local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- // DRAWING ОБЪЕКТЫ
+local Cursor1 = Drawing.new("Line"); Cursor1.Thickness = 1
+local Cursor2 = Drawing.new("Line"); Cursor2.Thickness = 1
+local SilentCircle = Drawing.new("Circle")
+SilentCircle.Thickness = 1; SilentCircle.NumSides = 64; SilentCircle.Filled = false; SilentCircle.Transparency = 1
+local LegitCircle = Drawing.new("Circle")
+LegitCircle.Thickness = 1; LegitCircle.NumSides = 64; LegitCircle.Filled = false; LegitCircle.Transparency = 1
+
+-- // UI ЭЛЕМЕНТЫ
+local SpecGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local SpecLabel = Instance.new("TextLabel", SpecGui)
+SpecLabel.Size = UDim2.new(0, 200, 0, 300); SpecLabel.Position = UDim2.new(0, 15, 0.4, 0)
+SpecLabel.BackgroundTransparency = 1; SpecLabel.TextColor3 = Color3.new(1, 1, 1); SpecLabel.Font = Enum.Font.Code; SpecLabel.TextSize = 14; SpecLabel.TextXAlignment = Enum.TextXAlignment.Left; SpecLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+local WLabel = Instance.new("TextLabel", Instance.new("ScreenGui", game:GetService("CoreGui")))
+WLabel.Size = UDim2.new(0, 300, 0, 20); WLabel.Position = UDim2.new(0.4, 0, 0, 5)
+WLabel.BackgroundTransparency = 1; WLabel.Font = Enum.Font.Code; WLabel.TextSize = 14; WLabel.TextStrokeTransparency = 0
+
+-- // ХРАНИЛИЩА
+local EspStore = {}
+local LastHealth = {}
+local TracersStore = {}
+
+-- // ТАБЛИЦА НАСТРОЕК
+local State = {
+    SilentAim = false, HitboxSize = 15, SilentFov = 150, HitboxTransparency = 0.8, Spinbot = false, SpinSpeed = 50,
+    LegitAim = false, LegitSmooth = 5, LegitFov = 100, LegitPart = "Head",
+    HitSound = false, NoRecoil = true,
+    Bhop = false, BhopSpeed = 25, Fly = false, FlySpeed = 50,
+    Esp = false, EspNames = false, EspHealth = false, Tracers = false,
+    Crosshair = true, SpecList = true, CameraFOV = 80, ThirdPerson = false,
+    HandMaterial = "Default", HandTransparency = 0, HandColor = Color3.fromRGB(255, 255, 255),
+    NightMode = false, WorldTint = Color3.fromRGB(255, 255, 255), Brightness = 1, Exposure = 0
+}
+
+-- // ФУНКЦИИ
+local function GetRGB() return Color3.fromHSV(tick() * 0.5 % 1, 1, 1) end
+local function PlayHitSound()
+    local sound = Instance.new("Sound", game:GetService("SoundService"))
+    sound.SoundId = "rbxassetid://1255557831"; sound.Volume = 5; sound:Play()
+    game:GetService("Debris"):AddItem(sound, 1)
+end
+
+-- // ВКЛАДКИ
+local TabRage = Window:CreateTab("Rage Bot", "zap")
+local TabLegit = Window:CreateTab("Legit Bot", "crosshair")
+local TabMovement = Window:CreateTab("Movement", "move")
+local TabVisuals = Window:CreateTab("Visuals", "eye")
+local TabWorld = Window:CreateTab("World", "map")
+
+TabRage:CreateToggle({Name = "OP Hitbox (Silent Aim)", CurrentValue = false, Callback = function(v) State.SilentAim = v end})
+TabRage:CreateSlider({Name = "Hitbox Size", Range = {1, 100}, Increment = 1, CurrentValue = 15, Callback = function(v) State.HitboxSize = v end})
+TabRage:CreateSlider({Name = "Hitbox Transparency", Range = {0, 1}, Increment = 0.1, CurrentValue = 0.8, Callback = function(v) State.HitboxTransparency = v end})
+TabRage:CreateSlider({Name = "Silent FOV", Range = {10, 800}, Increment = 10, CurrentValue = 150, Callback = function(v) State.SilentFov = v end})
+TabRage:CreateToggle({Name = "Spinbot", CurrentValue = false, Callback = function(v) State.Spinbot = v end})
+TabRage:CreateSlider({Name = "Spin Speed", Range = {1, 300}, Increment = 1, CurrentValue = 50, Callback = function(v) State.SpinSpeed = v end})
+
+TabLegit:CreateToggle({Name = "Legit Aimbot (Smooth)", CurrentValue = false, Callback = function(v) State.LegitAim = v end})
+TabLegit:CreateSlider({Name = "Smoothness", Range = {1, 20}, Increment = 1, CurrentValue = 5, Callback = function(v) State.LegitSmooth = v end})
+TabLegit:CreateSlider({Name = "Legit FOV", Range = {10, 400}, Increment = 5, CurrentValue = 100, Callback = function(v) State.LegitFov = v end})
+TabLegit:CreateDropdown({Name = "Target Part", Options = {"Head", "HumanoidRootPart"}, CurrentOption = "Head", Callback = function(v) State.LegitPart = v end})
+TabLegit:CreateToggle({Name = "Hit Sound (Bell)", CurrentValue = false, Callback = function(v) State.HitSound = v end})
+TabLegit:CreateToggle({Name = "No Recoil / Spread", CurrentValue = true, Callback = function(v) State.NoRecoil = v v.Value = v end})
+
+TabMovement:CreateToggle({Name = "Bhop", CurrentValue = false, Callback = function(v) State.Bhop = v end})
+TabMovement:CreateSlider({Name = "Bhop Speed", Range = {10, 100}, Increment = 1, CurrentValue = 25, Callback = function(v) State.BhopSpeed = v end})
+TabMovement:CreateToggle({Name = "Fly Mode", CurrentValue = false, Callback = function(v) State.Fly = v end})
+TabMovement:CreateSlider({Name = "Fly Speed", Range = {10, 300}, Increment = 5, CurrentValue = 50, Callback = function(v) State.FlySpeed = v end})
+
+TabVisuals:CreateSection("ESP Settings")
+TabVisuals:CreateToggle({Name = "Highlight ESP", CurrentValue = false, Callback = function(v) State.Esp = v end})
+TabVisuals:CreateToggle({Name = "Show Names + Dist", CurrentValue = false, Callback = function(v) State.EspNames = v end})
+TabVisuals:CreateToggle({Name = "Show Health Bar", CurrentValue = false, Callback = function(v) State.EspHealth = v end})
+TabVisuals:CreateToggle({Name = "Tracers", CurrentValue = false, Callback = function(v) State.Tracers = v end})
+TabVisuals:CreateToggle({Name = "RGB Pro-Crosshair", CurrentValue = true, Callback = function(v) State.Crosshair = v end})
+TabVisuals:CreateToggle({Name = "Spectator List", CurrentValue = true, Callback = function(v) State.SpecList = v end})
+TabVisuals:CreateSlider({Name = "Field of View", Range = {70, 130}, Increment = 1, CurrentValue = 80, Callback = function(v) State.CameraFOV = v end})
+TabVisuals:CreateToggle({Name = "Unlock Third Person", CurrentValue = false, Callback = function(v) State.ThirdPerson = v end})
+
+TabVisuals:CreateSection("Viewmodel Mods")
+TabVisuals:CreateDropdown({Name = "Hand/Weapon Material", Options = {"Default", "Neon", "ForceField", "Glass", "Plastic"}, CurrentOption = "Default", Callback = function(v) State.HandMaterial = v end})
+TabVisuals:CreateSlider({Name = "Material Transparency", Range = {0, 1}, Increment = 0.1, CurrentValue = 0, Callback = function(v) State.HandTransparency = v end})
+TabVisuals:CreateColorPicker({Name = "Hand Color", Color = Color3.fromRGB(255,255,255), Callback = function(v) State.HandColor = v end})
+
+-- // ДОБАВЛЕНО ДЛЯ РУК 1.9.4 В МЕНЮ
+TabVisuals:CreateSlider({Name = "Hand Scale (1.9.4)", Range = {0.1, 5}, Increment = 0.1, CurrentValue = 1, Callback = function(v) getgenv().HandScale = v end})
+TabVisuals:CreateToggle({Name = "Hands Enabled (1.9.4)", CurrentValue = true, Callback = function(v) getgenv().HandsEnabled = v end})
+
+TabWorld:CreateToggle({Name = "Night Mode", CurrentValue = false, Callback = function(v) State.NightMode = v end})
+TabWorld:CreateColorPicker({Name = "World Tint", Color = Color3.fromRGB(255, 255, 255), Callback = function(v) State.WorldTint = v end})
+TabWorld:CreateSlider({Name = "Brightness", Range = {0, 10}, Increment = 0.1, CurrentValue = 1, Callback = function(v) State.Brightness = v end})
+TabWorld:CreateSlider({Name = "Exposure (Darkness)", Range = {-5, 5}, Increment = 0.1, CurrentValue = 0, Callback = function(v) State.Exposure = v end})
+
+-- // CORE RENDER LOOP
+RunService.RenderStepped:Connect(function()
+    local color = GetRGB()
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    
+    WLabel.Text = string.format("SGLA.WTF | %s | %dms", LP.Name, math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()))
+    WLabel.TextColor3 = color
+    Camera.FieldOfView = State.CameraFOV
+    Lighting.ClockTime = State.NightMode and 0 or 14
+    Lighting.Ambient = State.WorldTint
+    Lighting.OutdoorAmbient = State.WorldTint
+    Lighting.Brightness = State.Brightness
+    Lighting.ExposureCompensation = State.Exposure
+
+    -- ESP ЛОГИКА
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LP then
+            local char = p.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if not char or not hum or hum.Health <= 0 or not hrp then
+                if EspStore[p] then for _, d in pairs(EspStore[p]) do d.Visible = false end end
+                if TracersStore[p] then TracersStore[p].Visible = false end
+                continue
+            end
+
+            if State.HitSound and (p.Team ~= LP.Team or p.Team == nil) then
+                if LastHealth[p] and hum.Health < LastHealth[p] then PlayHitSound() end
+                LastHealth[p] = hum.Health
+            end
+
+            if not EspStore[p] then
+                EspStore[p] = {
+                    Name = Drawing.new("Text"),
+                    HOutline = Drawing.new("Line"),
+                    HBar = Drawing.new("Line")
+                }
+                EspStore[p].Name.Size = 14
+                EspStore[p].Name.Center = true
+                EspStore[p].Name.Outline = true
+            end
+
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            local enemy = (p.Team ~= LP.Team or p.Team == nil)
+            local e = EspStore[p]
+
+            if enemy and State.Esp then
+                local h = char:FindFirstChild("Highlight") or Instance.new("Highlight", char)
+                h.Enabled = true; h.FillColor = color
+            elseif char:FindFirstChild("Highlight") then 
+                char.Highlight.Enabled = false 
+            end
+
+            if onScreen and enemy then
+                local topPos = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
+                local bottomPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+                local h = math.abs(topPos.Y - bottomPos.Y)
+                local w = h / 2
+
+                if State.EspNames then
+                    local dist = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                    e.Name.Visible = true
+                    e.Name.Text = p.Name .. " [" .. dist .. "m]"
+                    e.Name.Position = Vector2.new(pos.X, pos.Y - (h/2) - 20)
+                    e.Name.Color = color
+                else e.Name.Visible = false end
+
+                if State.EspHealth then
+                    local hpPct = math.clamp(hum.Health/hum.MaxHealth, 0, 1)
+                    e.HOutline.Visible = true; e.HBar.Visible = true
+                    e.HOutline.From = Vector2.new(pos.X - w/2 - 5, pos.Y - h/2)
+                    e.HOutline.To = Vector2.new(pos.X - w/2 - 5, pos.Y + h/2)
+                    e.HOutline.Color = Color3.new(0,0,0)
+                    e.HOutline.Thickness = 3
+
+                    e.HBar.From = Vector2.new(pos.X - w/2 - 5, pos.Y + h/2)
+                    e.HBar.To = Vector2.new(pos.X - w/2 - 5, pos.Y + h/2 - (h * hpPct))
+                    e.HBar.Color = Color3.fromHSV(hpPct * 0.3, 1, 1)
+                    e.HBar.Thickness = 2
+                else e.HOutline.Visible = false; e.HBar.Visible = false end
+
+                if State.Tracers then
+                    if not TracersStore[p] then TracersStore[p] = Drawing.new("Line") end
+                    TracersStore[p].Visible = true
+                    TracersStore[p].From = Vector2.new(center.X, Camera.ViewportSize.Y)
+                    TracersStore[p].To = Vector2.new(pos.X, pos.Y + h/2)
+                    TracersStore[p].Color = color
+                elseif TracersStore[p] then TracersStore[p].Visible = false end
+            else
+                for _, d in pairs(e) do d.Visible = false end
+                if TracersStore[p] then TracersStore[p].Visible = false end
+            end
+        end
+    end
+
+    if State.Crosshair then
+        local spin = tick() * 12
+        Cursor1.Visible = true; Cursor1.Color = color; Cursor1.From = center + Vector2.new(math.cos(spin)*12, math.sin(spin)*12); Cursor1.To = center + Vector2.new(math.cos(spin+math.pi)*12, math.sin(spin+math.pi)*12)
+        Cursor2.Visible = true; Cursor2.Color = color; Cursor2.From = center + Vector2.new(math.cos(spin+math.pi/2)*12, math.sin(spin+math.pi/2)*12); Cursor2.To = center + Vector2.new(math.cos(spin-math.pi/2)*12, math.sin(spin-math.pi/2)*12)
+    else Cursor1.Visible = false; Cursor2.Visible = false end
+
+    SilentCircle.Visible = State.SilentAim; SilentCircle.Position = center; SilentCircle.Radius = State.SilentFov; SilentCircle.Color = color
+    LegitCircle.Visible = State.LegitAim; LegitCircle.Position = center; LegitCircle.Radius = State.LegitFov; LegitCircle.Color = Color3.new(1,1,1)
+
+    if State.SpecList then
+        local s = "SPECTATORS:\n"
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LP and (not v.Character or not v.Character:FindFirstChild("Humanoid") or v.Character.Humanoid.Health <= 0) then s = s .. " > " .. v.Name .. "\n" end
+        end
+        SpecLabel.Text = s; SpecLabel.Visible = true; SpecLabel.TextColor3 = color
+    else SpecLabel.Visible = false end
+
+    local vm = Camera:FindFirstChild("Viewmodel") or Camera:FindFirstChild("Arms")
+    if vm then
+        for _, part in pairs(vm:GetDescendants()) do
+            if part:IsA("BasePart") then
+                if part:FindFirstChildOfClass("Texture") then
+                    for _, tex in pairs(part:GetChildren()) do if tex:IsA("Texture") then tex:Destroy() end end
+                end
+                part.Material = Enum.Material[State.HandMaterial]
+                part.Transparency = State.HandTransparency
+                if part.Name:lower():find("arm") or part.Name:lower():find("hand") then part.Color = State.HandColor end
+            end
+        end
+    end
+end)
+
+-- // ХИТБОКСЫ (RAGE)
+task.spawn(function()
+    while task.wait(0.3) do
+        if State.SilentAim then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LP and v.Character and (v.Team ~= LP.Team or v.Team == nil) then
+                    local root = v.Character:FindFirstChild("HumanoidRootPart")
+                    if root and v.Character.Humanoid.Health > 0 then
+                        local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                        if onScreen and (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude <= State.SilentFov then
+                            for _, pName in pairs({"RightUpperLeg", "LeftUpperLeg", "HeadHB", "HumanoidRootPart", "Head"}) do
+                                local p = v.Character:FindFirstChild(pName)
+                                if p then p.CanCollide = false; p.Transparency = State.HitboxTransparency; p.Size = Vector3.new(State.HitboxSize, State.HitboxSize, State.HitboxSize) end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- // LEGIT AIM
+RunService.RenderStepped:Connect(function()
+    if State.LegitAim then
+        local target = nil; local dist = State.LegitFov
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LP and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+                if v.Team ~= LP.Team or v.Team == nil then
+                    local p, vis = Camera:WorldToViewportPoint(v.Character[State.LegitPart].Position)
+                    if vis then
+                        local mag = (Vector2.new(p.X, p.Y) - UserInputService:GetMouseLocation()).Magnitude
+                        if mag < dist then dist = mag; target = v end
+                    end
+                end
+            end
+        end
+        if target then
+            local p = Camera:WorldToViewportPoint(target.Character[State.LegitPart].Position)
+            local m = UserInputService:GetMouseLocation()
+            mousemoverel((p.X - m.X)/State.LegitSmooth, (p.Y - m.Y)/State.LegitSmooth)
+        end
+    end
+end)
+
+-- // WEAPON MODS (NO RECOIL & NO SPREAD)
+task.spawn(function()
+    local WeaponsFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Weapons")
+    while task.wait(1) do
+        if State.NoRecoil then
+            -- Метод 1: GetGC
+            pcall(function()
+                for _, v in pairs(getgc(true)) do
+                    if type(v) == "table" and (rawget(v, "Recoil") or rawget(v, "Spread")) then
+                        v.Recoil = 0; v.Spread = 0; v.Accuracy = 0; v.WepSpread = 0; v.MaxSpread = 0; v.RecoilX = 0; v.RecoilY = 0
+                    end
+                end
+            end)
+            -- Метод 2: ReplicatedStorage
+            if WeaponsFolder then
+                for _, weapon in ipairs(WeaponsFolder:GetChildren()) do
+                    local spread = weapon:FindFirstChild("Spread")
+                    if spread then
+                        for _, v in ipairs(spread:GetDescendants()) do
+                            if v:IsA("NumberValue") then v.Value = 0 end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- // MOVEMENT
+RunService.Heartbeat:Connect(function()
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp, hum = LP.Character.HumanoidRootPart, LP.Character.Humanoid
+        if State.Fly then
+            hrp.Velocity = Vector3.new(0, 0.1, 0)
+            local move = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move += Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move += Camera.CFrame.RightVector end
+            hrp.CFrame += move * (State.FlySpeed / 50)
+        end
+        if State.Bhop and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            hum.Jump = true
+            if hum.MoveDirection.Magnitude > 0 then hrp.Velocity = Vector3.new(hum.MoveDirection.X * State.BhopSpeed, hrp.Velocity.Y, hum.MoveDirection.Z * State.BhopSpeed) end
+        end
+        if State.Spinbot then hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(State.SpinSpeed), 0) end
+    end
+    LP.CameraMaxZoomDistance = State.ThirdPerson and 40 or 0.5
+end)
+
+-- // КОД РУК 1.9.4
+RunService.Heartbeat:Connect(function()
+    local Arms = Camera:FindFirstChild("Arms")
+    if Arms then
+        if Arms:FindFirstChild("SASArms") then Arms.SASArms:Destroy() end
+        for _, v in pairs(Arms:GetDescendants()) do
+            if v:IsA("BasePart") then
+                if not getgenv().HandsEnabled then v.Transparency = 1 else
+                    v.Color = getgenv().Color; v.Material = getgenv().Material; v.Transparency = getgenv().Transparency 
+                    if v.Name:find("Arm") or v.Name:find("Hand") or v.Name == "Glove" then
+                        if not v:FindFirstChild("OriginalSize") then
+                            local s = Instance.new("Vector3Value", v); s.Name = "OriginalSize"; s.Value = v.Size
+                        end
+                        v.Size = v.OriginalSize.Value * getgenv().HandScale
+                    end
+                end
+            end
+        end
+    end
+end)

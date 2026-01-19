@@ -1,2 +1,0 @@
-# Sgla.Premium-
-Fix
